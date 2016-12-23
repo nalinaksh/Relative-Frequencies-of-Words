@@ -1,0 +1,49 @@
+########################################
+Input/Output format for mappers/reducers
+########################################
+
+1. Mapper1:
+
+   Input: key ~ LongWritable, value ~ Text
+   Output: key ~ AdjacentWord, value ~ IntWritable
+
+2. Reducer1:
+
+   Input: key ~ AdjacentWord, value ~ IntWritable
+   Output: key ~ AdjacentWord, value ~ DoubleWritalbe
+
+3. Mapper2:
+
+   Input: key ~ Object, value ~ Text
+   Output: key ~ DoubleWritable, value ~ AdjacentWord
+
+4. Reducer2:
+
+   Input: key ~ DoubleWritable, value ~ AdjacentWord
+   Output: key ~ AdjacentWord, value ~ DoubleWritable   
+
+Hadoop cluster settings
+
+#######################
+Pseudo-Distributed Mode
+#######################
+
+1. VM type: Ubuntu, t2.medium, 4GB RAM
+2. Number of Input splits (map tasks) for Job1 : 1
+3. Number of reduce tasks for Job1 : 3
+4. Number of Input splits (map tasks) for Job2 : 3 
+5. Number of reduce tasks for Job2 : 1
+6. Execution time: 10 minutes, 32 seconds 
+
+#######################
+Fully Distributed Mode
+#######################
+
+1. Number of VM's : 2 (1 Namenode + 1 Datanode)
+2. VM type: Ubuntu, t2.medium, 4GB RAM
+3. Number of Input splits (map tasks) for Job1 : 1
+4. Number of reduce tasks for Job1 : 3
+5. Number of Input splits (map tasks) for Job2 : 3 
+6. Number of reduce tasks for Job2 : 1
+7. Execution time: 10 minutes, 32 seconds 
+

@@ -1,0 +1,125 @@
+####################################
+Commands for Pseudo-Distributed Mode
+####################################
+
+Create a VM and make configurations as follows:
+
+a) For Passphrase less ssh to localhost, execute following commands
+   ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+   cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+   chmod 0600 ~/.ssh/authorized_keys
+
+b) Install openjdk-8-jdk
+   sudo apt-get update
+   sudo apt-get install openjdk-8-jdk
+
+c) Install Hadoop 2.7.3
+   wget http://apache.mirrors.tds.net/hadoop/common/hadoop-2.7.3/hadoop-2.7.3.tar.gz -P ~/Downloads
+   sudo tar zxvf ~/Downloads/hadoop-* -C /usr/local
+   sudo mv /usr/local/hadoop-* /usr/local/hadoop
+
+d) Edit ~/.profile as follows:
+   export JAVA_HOME=/usr
+   export PATH=$PATH:$JAVA_HOME/bin
+   export HADOOP_HOME=/usr/local/hadoop
+   export PATH=$PATH:$HADOOP_HOME/bin
+   export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop
+
+e) . ~/.profile
+
+f) Hadoop Configurations, modify following files
+   $HADOOP_CONF_DIR/hadoop-env.sh  
+   etc/hadoop/core-site.xml:
+   etc/hadoop/hdfs-site.xml:
+   etc/hadoop/mapred-site.xml
+   etc/hadoop/yarn-site.xml
+
+g) Start Hadoop: Format Namenode, Start HDFS, Yarn and History Server
+   hdfs namenode -format
+   HADOOP_HOME/sbin/start-dfs.sh
+   HADOOP_HOME/sbin/start-yarn.sh
+   HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
+
+
+1. To compile the java files, execute command below in the directory containing java source files:
+
+   javac -classpath $HADOOP_HOME/share/hadoop/common/hadoop-common-2.7.3.jar:$HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-client-core-2.7.3.jar:$HADOOP_HOME/share/hadoop/common/lib/commons-cli-1.2.jar -d ./ *.java
+
+2. Create a folder rclass, copy all '*.class' files into rclass
+
+3. Create jar file by executing the command below:
+
+   jar -cvf relativefreq.jar -C rclass .
+
+4. Make a directory /user inside HDFS:
+
+    hdfs dfs -mkdir /user
+
+5. Create another directory /user/input: 
+    
+    hdfs dfs -mkdir /user/input
+
+6. Copy 100KWikiText.txt file into /user/input/:
+
+    hdfs dfs -put 100KWikiText.txt /user/input/
+
+7. Command to run the program
+
+   hadoop jar relativefreq.jar WordFrequencies /user/input/ output
+
+8 Copy the output from HDFS:
+
+   hdfs dfs -cat output/* > top100.txt
+
+######################
+Fully Distributed Mode
+######################
+
+Create 2 VM's (1 namenode and 1 datanode)
+
+a) For passphrase less ssh from namenode to datanode:
+   modify ~/.ssh/config on Namenode as follows:
+   Host namenode
+   HostName namenode_public_dns
+   User ubuntu
+   IdentityFile ~/.ssh/pem_key_filename
+   Host datanode
+   HostName datanode1_public_dns
+   User ubuntu
+   IdentityFile ~/.ssh/pem_key_filename
+
+   Execute following commands on Namenode:
+   ssh-keygen -f ~/.ssh/id_rsa -t rsa -P ""
+   cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+   cat ~/.ssh/id_rsa.pub | ssh datanode 'cat >> ~/.ssh/authorized_keys'
+
+b) Execute same steps b) to e) as for Pseudo-Distributed mode
+
+c) Hadoop Configurations:
+
+   Common Configurations for Namenode & Datanode, modify following files
+   $HADOOP_CONF_DIR/hadoop-env.sh  
+   $HADOOP_CONF_DIR/core-site.xml
+   $HADOOP_CONF_DIR/yarn-site.xml
+   $HADOOP_CONF_DIR/mapred-site.xml
+
+   Namenode specific configurations:
+   /etc/hosts -- add namenode/datanode public_dns_names and hostnames
+   $HADOOP_CONF_DIR/hdfs-site.xml -- set replication factor to 1
+   sudo mkdir -p $HADOOP_HOME/hadoop_data/hdfs/namenode
+   sudo touch $HADOOP_CONF_DIR/masters -- add Namenode hostname
+   $HADOOP_CONF_DIR/slaves -- add datanode hostname
+   sudo chown -R ubuntu $HADOOP_HOME
+
+   Datanode specific configurations:
+   $HADOOP_CONF_DIR/hdfs-site.xml -- set replication factor to 1
+   sudo mkdir -p $HADOOP_HOME/hadoop_data/hdfs/datanode
+   sudo chown -R ubuntu $HADOOP_HOME
+   
+g) Start Hadoop Cluster: Format Namenode, Start HDFS, Yarn and History Server
+   hdfs namenode -format
+   HADOOP_HOME/sbin/start-dfs.sh
+   HADOOP_HOME/sbin/start-yarn.sh
+   HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
+   
+For executing the application program, execute the same commands from Namenode as on Pseudo-Distributed mode to compile/execute java program
